@@ -1,0 +1,201 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ==========================================
+// AUTHENTICATION
+// ==========================================
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+
+  username      String?  @unique
+  displayName   String?
+
+  memberships   CollectionMember[]
+  sentInvites   CollectionInvitation[] @relation("SentInvitations")
+  receivedInvites CollectionInvitation[] @relation("ReceivedInvitations")
+
+  coloringProjects ColoringProject[]
+  uploadReservations UploadReservation[]
+}
+
+model Account {
+  id                    String   @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// ==========================================
+// MARKER COLLECTIONS
+// ==========================================
+
+model MarkerCollection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  members     CollectionMember[]
+  markers     Marker[]
+  invitations CollectionInvitation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CollectionMember {
+  id           String   @id @default(cuid())
+  userId       String
+  collectionId String
+  role         String   @default("EDITOR")
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection   MarkerCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  joinedAt     DateTime @default(now())
+
+  @@unique([userId, collectionId])
+}
+
+model CollectionInvitation {
+  id            String   @id @default(cuid())
+  collectionId  String
+  invitedById   String
+  invitedUserId String
+  status        String   @default("PENDING")
+
+  collection MarkerCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  invitedBy  User @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedUser User @relation("ReceivedInvitations", fields: [invitedUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([collectionId, invitedUserId])
+}
+
+model Marker {
+  id           String   @id @default(cuid())
+  collectionId String
+
+  brand        String
+  name         String
+  code         String
+  hexColor     String
+
+  collection   MarkerCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([collectionId, brand, code])
+}
+
+// ==========================================
+// COLORING PROJECTS
+// ==========================================
+
+
+model ColoringProject {
+  id        String   @id @default(cuid())
+  title     String
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  imageKey  String   @unique
+
+  // Latest AI-generated coloring result
+  generatedImageKey  String?
+  generatedStyle     String?
+  customInstructions String?
+  generatedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ==========================================
+// STORAGE MANAGEMENT
+// ==========================================
+
+model StorageQuota {
+  id                 String   @id @default("global")
+  usedBytes          BigInt   @default(0)
+  reservedBytes      BigInt   @default(0)
+  aiGenerationsToday Int      @default(0)
+  aiUsageDate        String?
+  updatedAt          DateTime @updatedAt
+}
+
+model UploadReservation {
+  id           String   @id @default(cuid())
+  userId       String
+  objectKey    String   @unique
+  expectedBytes BigInt
+  expiresAt    DateTime
+  status       String   @default("PENDING")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}

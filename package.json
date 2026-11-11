@@ -9,12 +9,24 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1166.0",
+    "@aws-sdk/s3-request-presigner": "^3.1166.0",
+    "@better-auth/prisma-adapter": "^1.7.20",
+    "@google/genai": "^3.1.0",
+    "@prisma/adapter-better-sqlite3": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "better-auth": "^1.7.20",
+    "better-sqlite3": "^13.0.3",
+    "lucide-react": "^1.71.0",
     "next": "16.4.6",
+    "openai": "^7.55.0",
+    "prisma": "^7.10.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
